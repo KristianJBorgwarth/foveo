@@ -1,15 +1,15 @@
 SLN := foveo.sln
 
-.PHONY: restore build test clean
+.PHONY: build test clean
 
-restore:
-	dotnet restore $(SLN)
-
-build: restore
-	dotnet build $(SLN) --no-restore
+build: 
+	dotnet build $(SLN) 
 
 test: build
 	dotnet test $(SLN) --no-build
 
 clean:
 	dotnet clean $(SLN)
+
+run:
+	dotnet run --project src/Foveo.API/Foveo.API.csproj
