@@ -1,0 +1,16 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Foveo.API", "src\Foveo.API\Foveo.API.csproj", "{2C03AE9E-622B-47C7-8D25-B5725162B0E6}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{2C03AE9E-622B-47C7-8D25-B5725162B0E6}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{2C03AE9E-622B-47C7-8D25-B5725162B0E6}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{2C03AE9E-622B-47C7-8D25-B5725162B0E6}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{2C03AE9E-622B-47C7-8D25-B5725162B0E6}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+EndGlobal

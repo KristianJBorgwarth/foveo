@@ -1,0 +1,6 @@
+@Foveo.API_HostAddress = http://localhost:5076
+
+GET {{Foveo.API_HostAddress}}/weatherforecast/
+Accept: application/json
+
+###
