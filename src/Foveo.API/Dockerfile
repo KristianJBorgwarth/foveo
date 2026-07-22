@@ -1,4 +1,8 @@
-﻿FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+FROM mcr.microsoft.com/dotnet/aspnet:10.0 AS base
+# ffmpeg: video poster frames + web-MP4 transcode. libgomp1/libfontconfig1: Magick.NET native runtime.
+RUN apt-get update \
+    && apt-get install -y --no-install-recommends ffmpeg libgomp1 libfontconfig1 \
+    && rm -rf /var/lib/apt/lists/*
 USER $APP_UID
 WORKDIR /app
 EXPOSE 8080

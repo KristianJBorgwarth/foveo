@@ -1,3 +1,4 @@
+namespace Foveo.Domain.Common;
 
 public sealed record Error(string Code, ErrorType Type, string? Description = null)
 {

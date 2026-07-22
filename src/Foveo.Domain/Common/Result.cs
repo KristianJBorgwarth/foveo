@@ -1,6 +1,8 @@
 // ReSharper disable MemberCanBeProtected.Global
 // ReSharper disable MemberCanBePrivate.Global
 
+namespace Foveo.Domain.Common;
+
 public class Result
 {
     public bool Success { get; private set; }

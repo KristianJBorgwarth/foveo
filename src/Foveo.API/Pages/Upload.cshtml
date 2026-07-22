@@ -1,0 +1,36 @@
+@page
+@model UploadModel
+@{
+    ViewData["Title"] = "Add photos";
+}
+
+<section class="page-intro">
+    <h1>Add your photos</h1>
+    <p>Pick as many photos and videos as you like — they'll appear in the gallery once they finish uploading.</p>
+</section>
+
+<form class="upload-form" id="upload-form">
+    <label class="field">
+        <span class="field-label">Your name <em>(optional)</em></span>
+        <input type="text" id="uploader-name" name="uploaderName" maxlength="80" autocomplete="name"
+               placeholder="So we know who to thank" />
+    </label>
+
+    <label class="dropzone" for="file-input">
+        <span class="dropzone-mark">✦</span>
+        <span class="dropzone-title">Tap to choose photos &amp; videos</span>
+        <span class="dropzone-hint">or drag them here</span>
+        <input type="file" id="file-input" accept="image/*,video/*" multiple hidden />
+    </label>
+
+    <ul class="upload-list" id="upload-list"></ul>
+
+    <button type="submit" class="button button-primary" id="upload-button" disabled>Upload</button>
+    <p class="upload-done" id="upload-done" hidden>
+        All done! <a asp-page="/Index">See the gallery →</a>
+    </p>
+</form>
+
+@section Scripts {
+    <script src="~/js/upload.js" asp-append-version="true"></script>
+}

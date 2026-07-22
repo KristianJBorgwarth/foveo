@@ -1,3 +1,5 @@
+namespace Foveo.Domain.Common;
+
 public enum ErrorType
 {
     /// <summary>
