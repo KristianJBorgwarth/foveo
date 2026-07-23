@@ -4,10 +4,10 @@ using Foveo.Application.Models;
 namespace Foveo.Application.Services;
 
 /// <summary>
-/// Builds gallery pages: reads the ready items for a page and signs fresh GET URLs so the
-/// browser fetches thumbnails and full copies straight from the store.
+/// Builds gallery pages. Thumbnails and full media are served by the API itself, so items just
+/// carry app-relative URLs — no object-store signing or exposure involved.
 /// </summary>
-public sealed class GalleryService(IMediaRepository repository, IMediaStorage storage)
+public sealed class GalleryService(IMediaRepository repository)
 {
     public const int DefaultPageSize = 30;
     public const int MaxPageSize = 100;
@@ -22,14 +22,15 @@ public sealed class GalleryService(IMediaRepository repository, IMediaStorage st
 
         var media = await repository.GetReadyPageAsync(page, pageSize, ct);
 
-        var items = new List<GalleryItem>(media.Count);
-        foreach (var m in media)
-        {
-            // ThumbnailKey/DisplayKey are guaranteed non-null for Ready items (invariant of MarkReady).
-            var thumbUrl = await storage.CreateDownloadUrlAsync(m.ThumbnailKey!, ct);
-            var displayUrl = await storage.CreateDownloadUrlAsync(m.DisplayKey!, ct);
-            items.Add(new GalleryItem(m.Id, m.Type, thumbUrl.ToString(), displayUrl.ToString(), m.UploaderName, m.Created));
-        }
+        var items = media
+            .Select(m => new GalleryItem(
+                m.Id,
+                m.Type,
+                $"/media/{m.Id:N}/thumb",
+                $"/media/{m.Id:N}/display",
+                m.UploaderName,
+                m.Created))
+            .ToList();
 
         return new GalleryPage(items, page, pageSize, total, totalPages);
     }

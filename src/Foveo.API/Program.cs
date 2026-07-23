@@ -33,8 +33,8 @@ builder.Services.AddEndpoints();
 builder.Services.AddRazorPages();
 builder.Services.AddOpenApi();
 
-// Guests attach big videos: raise the multipart cap for the (rare) fallback proxy path.
-builder.Services.Configure<Microsoft.AspNetCore.Http.Features.FormOptions>(o => o.MultipartBodyLengthLimit = long.MaxValue);
+// Uploads stream through the API, and guests attach multi-GB videos: lift the request-body cap.
+builder.WebHost.ConfigureKestrel(o => o.Limits.MaxRequestBodySize = null);
 
 var app = builder.Build();
 

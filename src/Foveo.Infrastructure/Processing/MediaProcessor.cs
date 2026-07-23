@@ -105,7 +105,8 @@ public sealed class MediaProcessor(IMediaStorage storage, ILogger<MediaProcessor
 
     private async Task DownloadAsync(string key, string destinationPath, CancellationToken ct)
     {
-        await using var source = await storage.OpenReadAsync(key, ct);
+        var read = await storage.OpenReadAsync(key, null, null, ct);
+        await using var source = read.Content;
         await using var destination = File.Create(destinationPath);
         await source.CopyToAsync(destination, ct);
     }
@@ -113,7 +114,7 @@ public sealed class MediaProcessor(IMediaStorage storage, ILogger<MediaProcessor
     private async Task UploadAsync(string key, string path, string contentType, CancellationToken ct)
     {
         await using var stream = File.OpenRead(path);
-        await storage.PutAsync(key, stream, contentType, ct);
+        await storage.PutAsync(key, stream, stream.Length, contentType, ct);
     }
 
     private void TryCleanup(string workDir)

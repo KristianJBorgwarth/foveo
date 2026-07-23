@@ -2,97 +2,122 @@ using Amazon.Runtime;
 using Amazon.S3;
 using Amazon.S3.Model;
 using Foveo.Application.Contracts;
+using Foveo.Application.Models;
 using Foveo.Infrastructure.Configuration;
 
 namespace Foveo.Infrastructure.Storage;
 
 /// <summary>
-/// S3-compatible storage (MinIO). Two clients: an internal one for server-side byte transfer,
-/// and a public-endpoint one used only to sign URLs the browser can reach directly.
+/// S3-compatible storage (MinIO), reached only over the internal cluster endpoint. The API
+/// streams uploads in and media out, so no presigning, public endpoint, or CORS is involved.
 /// </summary>
 public sealed class S3MediaStorage : IMediaStorage, IDisposable
 {
-    private readonly IAmazonS3 _internal;
-    private readonly IAmazonS3 _public;
+    private readonly IAmazonS3 _client;
     private readonly S3Options _options;
-    private readonly string _publicScheme;
 
     public S3MediaStorage(S3Options options)
     {
         _options = options;
-        _publicScheme = new Uri(options.PublicEndpoint).Scheme;
         var credentials = new BasicAWSCredentials(options.AccessKey, options.SecretKey);
-        _internal = Build(credentials, options.InternalEndpoint, options.Region);
-        _public = Build(credentials, options.PublicEndpoint, options.Region);
-    }
-
-    private static IAmazonS3 Build(AWSCredentials credentials, string endpoint, string region)
-        => new AmazonS3Client(credentials, new AmazonS3Config
+        _client = new AmazonS3Client(credentials, new AmazonS3Config
         {
-            ServiceURL = endpoint,
+            ServiceURL = options.Endpoint,
             ForcePathStyle = true,
-            AuthenticationRegion = region,
-            // SDK v4 adds integrity checksums by default; those extra headers break browser PUTs
-            // against a presigned URL, so only calculate a checksum when the operation requires one.
+            AuthenticationRegion = options.Region,
             RequestChecksumCalculation = RequestChecksumCalculation.WHEN_REQUIRED,
             ResponseChecksumValidation = ResponseChecksumValidation.WHEN_REQUIRED
         });
+    }
 
     public async Task EnsureBucketAsync(CancellationToken ct = default)
     {
-        if (await Amazon.S3.Util.AmazonS3Util.DoesS3BucketExistV2Async(_internal, _options.BucketName))
+        if (await Amazon.S3.Util.AmazonS3Util.DoesS3BucketExistV2Async(_client, _options.BucketName))
             return;
 
-        await _internal.PutBucketAsync(new PutBucketRequest { BucketName = _options.BucketName }, ct);
+        await _client.PutBucketAsync(new PutBucketRequest { BucketName = _options.BucketName }, ct);
     }
 
-    public Task<Uri> CreateUploadUrlAsync(string key, string contentType, CancellationToken ct = default)
-        => PresignAsync(key, HttpVerb.PUT, contentType);
-
-    public Task<Uri> CreateDownloadUrlAsync(string key, CancellationToken ct = default)
-        => PresignAsync(key, HttpVerb.GET, contentType: null);
-
-    private async Task<Uri> PresignAsync(string key, HttpVerb verb, string? contentType)
+    public async Task PutAsync(string key, Stream content, long contentLength, string contentType, CancellationToken ct = default)
     {
-        var request = new GetPreSignedUrlRequest
+        // SigV4 over HTTP must hash the payload, which needs a seekable stream. A request body isn't
+        // seekable, so spool it to a temp file first (flat memory, no OOM even for a 2 GB video).
+        // Streams that are already seekable (the processor's derivative files) are sent straight through.
+        if (content.CanSeek)
+        {
+            await PutObjectAsync(key, content, contentType, ct);
+            return;
+        }
+
+        var tempPath = Path.Combine(Path.GetTempPath(), $"foveo-up-{Guid.NewGuid():N}");
+        try
+        {
+            await using (var temp = File.Create(tempPath))
+            {
+                await content.CopyToAsync(temp, ct);
+            }
+            await using var seekable = File.OpenRead(tempPath);
+            await PutObjectAsync(key, seekable, contentType, ct);
+        }
+        finally
+        {
+            if (File.Exists(tempPath)) File.Delete(tempPath);
+        }
+    }
+
+    private Task PutObjectAsync(string key, Stream seekableContent, string contentType, CancellationToken ct)
+        => _client.PutObjectAsync(new PutObjectRequest
         {
             BucketName = _options.BucketName,
             Key = key,
-            Verb = verb,
-            Expires = DateTime.UtcNow.AddMinutes(_options.PresignMinutes)
-        };
-        if (contentType is not null)
-            request.ContentType = contentType;
-
-        var url = await _public.GetPreSignedURLAsync(request);
-
-        // The SDK forces https when signing; SigV4 signs the host header but not the scheme,
-        // so we can safely rewrite the scheme to match the configured public endpoint.
-        return new UriBuilder(url) { Scheme = _publicScheme }.Uri;
-    }
-
-    public async Task<Stream> OpenReadAsync(string key, CancellationToken ct = default)
-    {
-        var response = await _internal.GetObjectAsync(_options.BucketName, key, ct);
-        return response.ResponseStream;
-    }
-
-    public Task PutAsync(string key, Stream content, string contentType, CancellationToken ct = default)
-        => _internal.PutObjectAsync(new PutObjectRequest
-        {
-            BucketName = _options.BucketName,
-            Key = key,
-            InputStream = content,
+            InputStream = seekableContent,
             ContentType = contentType,
             AutoCloseStream = false
         }, ct);
 
-    public Task DeleteAsync(string key, CancellationToken ct = default)
-        => _internal.DeleteObjectAsync(_options.BucketName, key, ct);
-
-    public void Dispose()
+    public async Task<MediaReadResult> OpenReadAsync(string key, long? rangeStart, long? rangeEnd, CancellationToken ct = default)
     {
-        _internal.Dispose();
-        _public.Dispose();
+        if (rangeStart is null && rangeEnd is null)
+        {
+            var full = await _client.GetObjectAsync(_options.BucketName, key, ct);
+            return new MediaReadResult
+            {
+                Content = full.ResponseStream,
+                ContentType = full.Headers.ContentType ?? "application/octet-stream",
+                TotalLength = full.Headers.ContentLength,
+                RangeStart = 0,
+                RangeEnd = full.Headers.ContentLength - 1,
+                IsPartial = false
+            };
+        }
+
+        var meta = await _client.GetObjectMetadataAsync(_options.BucketName, key, ct);
+        var total = meta.Headers.ContentLength;
+        var start = rangeStart ?? 0;
+        var end = rangeEnd ?? total - 1;
+        if (end > total - 1) end = total - 1;
+        if (start < 0) start = 0;
+
+        var response = await _client.GetObjectAsync(new GetObjectRequest
+        {
+            BucketName = _options.BucketName,
+            Key = key,
+            ByteRange = new ByteRange(start, end)
+        }, ct);
+
+        return new MediaReadResult
+        {
+            Content = response.ResponseStream,
+            ContentType = meta.Headers.ContentType ?? "application/octet-stream",
+            TotalLength = total,
+            RangeStart = start,
+            RangeEnd = end,
+            IsPartial = true
+        };
     }
+
+    public Task DeleteAsync(string key, CancellationToken ct = default)
+        => _client.DeleteObjectAsync(_options.BucketName, key, ct);
+
+    public void Dispose() => _client.Dispose();
 }

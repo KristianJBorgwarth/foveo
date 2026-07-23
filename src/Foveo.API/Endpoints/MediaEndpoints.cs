@@ -1,6 +1,5 @@
 using Foveo.API.Common;
 using Foveo.API.Extensions;
-using Foveo.Application.Models;
 using Foveo.Application.Services;
 
 namespace Foveo.API.Endpoints;
@@ -13,28 +12,23 @@ internal sealed class MediaEndpoints : IEndpoint
             .WithTags("Media")
             .ProducesProblem(StatusCodes.Status400BadRequest);
 
-        // Step 1: create Pending rows and hand back presigned PUT URLs (bytes go browser→store directly).
-        grp.MapPost("/upload-tickets", async (
-            CreateUploadTicketsRequest request,
+        // Single streamed upload: the file is the request body; metadata rides in the query string.
+        grp.MapPost("", async (
+            HttpContext ctx,
             MediaUploadService uploads,
-            CancellationToken ct) =>
+            string fileName,
+            string? uploaderName) =>
         {
-            var items = (request.Files ?? [])
-                .Select(f => new UploadRequestItem(f.FileName, f.ContentType, f.SizeBytes))
-                .ToList();
+            var contentType = ctx.Request.ContentType ?? "application/octet-stream";
+            var length = ctx.Request.ContentLength;
+            if (length is null or <= 0)
+                return Results.Problem("A non-empty file body with a Content-Length is required.",
+                    statusCode: StatusCodes.Status400BadRequest);
 
-            var result = await uploads.RequestUploadsAsync(items, request.UploaderName, ct);
+            var result = await uploads.StoreUploadAsync(
+                fileName, contentType, length.Value, uploaderName, ctx.Request.Body, ctx.RequestAborted);
+
             return result.ToOk();
-        });
-
-        // Step 2: the client confirms the bytes landed; mark uploaded and enqueue processing.
-        grp.MapPost("/{id:guid}/complete", async (
-            Guid id,
-            MediaUploadService uploads,
-            CancellationToken ct) =>
-        {
-            var result = await uploads.CompleteUploadAsync(id, ct);
-            return result.ToNoContent();
         });
     }
 }

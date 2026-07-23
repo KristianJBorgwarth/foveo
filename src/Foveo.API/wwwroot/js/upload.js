@@ -57,55 +57,32 @@
         if (bar) bar.style.width = `${Math.round(fraction * 100)}%`;
     }
 
-    function putWithProgress(url, file, contentType, onProgress) {
+    // Stream one file straight to the API; the file IS the request body.
+    function uploadFile(file, i) {
+        const name = nameInput.value.trim();
+        let url = `/api/media?fileName=${encodeURIComponent(file.name)}`;
+        if (name) url += `&uploaderName=${encodeURIComponent(name)}`;
+
         return new Promise((resolve, reject) => {
             const xhr = new XMLHttpRequest();
-            xhr.open("PUT", url);
-            xhr.setRequestHeader("Content-Type", contentType);
-            xhr.upload.onprogress = (e) => { if (e.lengthComputable) onProgress(e.loaded / e.total); };
+            xhr.open("POST", url);
+            xhr.setRequestHeader("Content-Type", contentTypeOf(file));
+            xhr.upload.onprogress = (e) => { if (e.lengthComputable) setProgress(i, e.loaded / e.total); };
             xhr.onload = () => (xhr.status >= 200 && xhr.status < 300)
                 ? resolve()
-                : reject(new Error(`Upload failed (${xhr.status})`));
-            xhr.onerror = () => reject(new Error("Network error during upload"));
+                : reject(new Error(`Upload fejlede (${xhr.status})`));
+            xhr.onerror = () => reject(new Error("Netværksfejl"));
             xhr.send(file);
         });
     }
 
-    async function requestTickets() {
-        const payload = {
-            uploaderName: nameInput.value.trim() || null,
-            files: files.map((f) => ({ fileName: f.name, contentType: contentTypeOf(f), sizeBytes: f.size }))
-        };
-        const response = await fetch("/api/media/upload-tickets", {
-            method: "POST",
-            headers: { "Content-Type": "application/json" },
-            body: JSON.stringify(payload)
-        });
-        if (!response.ok) {
-            const problem = await response.json().catch(() => null);
-            throw new Error(problem?.detail || "Could not start the upload.");
-        }
-        return response.json();
-    }
-
     async function upload() {
         button.disabled = true;
-        let tickets;
-        try {
-            tickets = await requestTickets();
-        } catch (err) {
-            files.forEach((_, i) => setStatus(i, err.message, "is-error"));
-            button.disabled = false;
-            return;
-        }
-
         let allOk = true;
         for (let i = 0; i < files.length; i++) {
-            const ticket = tickets[i];
             try {
                 setStatus(i, "Uploader…");
-                await putWithProgress(ticket.uploadUrl, files[i], ticket.contentType, (f) => setProgress(i, f));
-                await fetch(`/api/media/${ticket.mediaId}/complete`, { method: "POST" });
+                await uploadFile(files[i], i);
                 setProgress(i, 1);
                 setStatus(i, "Færdig", "is-done");
             } catch (err) {
@@ -113,7 +90,6 @@
                 setStatus(i, err.message, "is-error");
             }
         }
-
         doneMessage.hidden = !allOk;
         button.disabled = false;
     }
