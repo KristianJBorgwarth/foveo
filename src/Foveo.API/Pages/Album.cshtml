@@ -1,0 +1,70 @@
+@page
+@model AlbumModel
+@{
+    ViewData["Title"] = "Album";
+    ViewData["Active"] = "album";
+    var gallery = Model.Gallery;
+    var stats = Model.Stats;
+}
+
+<partial name="_Nav" />
+
+<section class="gallery-section">
+    <div class="gallery-head">
+        <h2>Albummet indtil videre</h2>
+        <span class="mono">@stats.Photos billeder · @stats.Videos videoer · @stats.Guests gæster</span>
+    </div>
+
+    @if (gallery.TotalItems == 0)
+    {
+        <div class="empty-state">
+            <span class="dz-title">Endnu ingen minder</span>
+            <p class="dz-hint">Vær den første til at dele et billede.</p>
+        </div>
+    }
+    else
+    {
+        <div class="grid">
+            @foreach (var item in gallery.Items)
+            {
+                <div class="card" data-type="@item.Type" data-src="@item.DisplayUrl">
+                    <div class="ph">
+                        <img src="@item.ThumbnailUrl" loading="lazy" alt="" />
+                        @if (item.Type == MediaType.Video)
+                        {
+                            <div class="play-badge" aria-hidden="true"></div>
+                        }
+                    </div>
+                    <div class="caption">
+                        <span class="who">@(item.UploaderName ?? "Gæst")</span>
+                        <span class="when">@item.CreatedAt.ToLocalTime().ToString("HH:mm")</span>
+                    </div>
+                </div>
+            }
+        </div>
+
+        @if (gallery.TotalPages > 1)
+        {
+            <nav class="pager" aria-label="Sider">
+                @if (gallery.HasPrevious)
+                {
+                    <a class="mono" asp-page="/Album" asp-route-page="@(gallery.Page - 1)">← Nyere</a>
+                }
+                <span class="mono pager-status">Side @gallery.Page / @gallery.TotalPages</span>
+                @if (gallery.HasNext)
+                {
+                    <a class="mono" asp-page="/Album" asp-route-page="@(gallery.Page + 1)">Ældre →</a>
+                }
+            </nav>
+        }
+    }
+</section>
+
+<div class="lightbox" id="lightbox" hidden>
+    <button type="button" class="lightbox-close" id="lightbox-close" aria-label="Luk">✕</button>
+    <div class="lightbox-content" id="lightbox-content"></div>
+</div>
+
+@section Scripts {
+    <script src="~/js/gallery.js" asp-append-version="true"></script>
+}

@@ -1,0 +1,12 @@
+@inject IOptions<WeddingOptions> WeddingOpts
+@{
+    var active = ViewData["Active"] as string;
+    var w = WeddingOpts.Value;
+}
+<nav class="tabs">
+    <a class="tab-home" asp-page="/Index">@w.CoupleFirst <span class="amp">&amp;</span> @w.CoupleSecond</a>
+    <div class="tab-links">
+        <a class="tab @(active == "album" ? "is-active" : "")" asp-page="/Album">Album</a>
+        <a class="tab @(active == "upload" ? "is-active" : "")" asp-page="/Upload">Upload billede</a>
+    </div>
+</nav>

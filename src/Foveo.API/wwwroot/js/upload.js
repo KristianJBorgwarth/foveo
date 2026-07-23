@@ -36,7 +36,7 @@
             item.id = `item-${i}`;
             item.innerHTML =
                 `<span class="upload-item-name"></span>` +
-                `<span class="upload-item-status">Ready</span>` +
+                `<span class="upload-item-status">Klar</span>` +
                 `<span class="upload-bar"><span></span></span>`;
             item.querySelector(".upload-item-name").textContent = file.name;
             list.appendChild(item);
@@ -103,11 +103,11 @@
         for (let i = 0; i < files.length; i++) {
             const ticket = tickets[i];
             try {
-                setStatus(i, "Uploading…");
+                setStatus(i, "Uploader…");
                 await putWithProgress(ticket.uploadUrl, files[i], ticket.contentType, (f) => setProgress(i, f));
                 await fetch(`/api/media/${ticket.mediaId}/complete`, { method: "POST" });
                 setProgress(i, 1);
-                setStatus(i, "Done", "is-done");
+                setStatus(i, "Færdig", "is-done");
             } catch (err) {
                 allOk = false;
                 setStatus(i, err.message, "is-error");

@@ -1,35 +1,38 @@
 @page
 @model UploadModel
 @{
-    ViewData["Title"] = "Add photos";
+    ViewData["Title"] = "Upload billede";
+    ViewData["Active"] = "upload";
 }
 
-<section class="page-intro">
-    <h1>Add your photos</h1>
-    <p>Pick as many photos and videos as you like — they'll appear in the gallery once they finish uploading.</p>
+<partial name="_Nav" />
+
+<section class="upload-section">
+    <form class="upload-card" id="upload-form">
+        <span class="mono">Del jeres minder</span>
+
+        <div class="field">
+            <label for="uploader-name">Dit navn</label>
+            <input type="text" id="uploader-name" name="uploaderName" maxlength="80" autocomplete="name" placeholder="Sofie Lund" />
+        </div>
+
+        <div class="field">
+            <label>Billeder &amp; videoer</label>
+            <label class="dropzone" for="file-input">
+                <div class="dz-title">Tryk for at vælge</div>
+                <div class="dz-hint">direkte fra kamerarullen — vi klarer resten</div>
+                <input type="file" id="file-input" accept="image/*,video/*" multiple hidden />
+            </label>
+        </div>
+
+        <ul class="upload-list" id="upload-list"></ul>
+
+        <button type="submit" class="btn" id="upload-button" disabled>Føj til albummet</button>
+        <p class="upload-done mono" id="upload-done" hidden>
+            Tilføjet! <a asp-page="/Album">Se albummet →</a>
+        </p>
+    </form>
 </section>
-
-<form class="upload-form" id="upload-form">
-    <label class="field">
-        <span class="field-label">Your name <em>(optional)</em></span>
-        <input type="text" id="uploader-name" name="uploaderName" maxlength="80" autocomplete="name"
-               placeholder="So we know who to thank" />
-    </label>
-
-    <label class="dropzone" for="file-input">
-        <span class="dropzone-mark">✦</span>
-        <span class="dropzone-title">Tap to choose photos &amp; videos</span>
-        <span class="dropzone-hint">or drag them here</span>
-        <input type="file" id="file-input" accept="image/*,video/*" multiple hidden />
-    </label>
-
-    <ul class="upload-list" id="upload-list"></ul>
-
-    <button type="submit" class="button button-primary" id="upload-button" disabled>Upload</button>
-    <p class="upload-done" id="upload-done" hidden>
-        All done! <a asp-page="/Index">See the gallery →</a>
-    </p>
-</form>
 
 @section Scripts {
     <script src="~/js/upload.js" asp-append-version="true"></script>

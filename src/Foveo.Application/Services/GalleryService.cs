@@ -33,4 +33,7 @@ public sealed class GalleryService(IMediaRepository repository, IMediaStorage st
 
         return new GalleryPage(items, page, pageSize, total, totalPages);
     }
+
+    public Task<GalleryStats> GetStatsAsync(CancellationToken ct = default)
+        => repository.GetStatsAsync(ct);
 }

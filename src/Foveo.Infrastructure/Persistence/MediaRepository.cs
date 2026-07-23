@@ -1,4 +1,5 @@
 using Foveo.Application.Contracts;
+using Foveo.Application.Models;
 using Foveo.Domain.Aggregates;
 using Foveo.Infrastructure.Persistence.Context;
 using Microsoft.EntityFrameworkCore;
@@ -26,4 +27,17 @@ public sealed class MediaRepository(MediaDbContext db) : IMediaRepository
 
     public Task<int> CountReadyAsync(CancellationToken ct = default)
         => db.Media.CountAsync(m => m.Status == MediaStatus.Ready, ct);
+
+    public async Task<GalleryStats> GetStatsAsync(CancellationToken ct = default)
+    {
+        var ready = db.Media.Where(m => m.Status == MediaStatus.Ready);
+        var photos = await ready.CountAsync(m => m.Type == MediaType.Photo, ct);
+        var videos = await ready.CountAsync(m => m.Type == MediaType.Video, ct);
+        var guests = await ready
+            .Where(m => m.UploaderName != null)
+            .Select(m => m.UploaderName)
+            .Distinct()
+            .CountAsync(ct);
+        return new GalleryStats(photos, videos, guests);
+    }
 }

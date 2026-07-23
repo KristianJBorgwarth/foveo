@@ -1,4 +1,5 @@
 using System.Reflection;
+using Foveo.API.Configuration;
 using Foveo.API.Extensions;
 using Foveo.Application;
 using Foveo.Application.Contracts;
@@ -25,6 +26,8 @@ builder.Services.AddObservability();
 
 builder.Services.AddApplication();
 builder.Services.AddInfrastructure(configuration);
+
+builder.Services.Configure<WeddingOptions>(configuration.GetSection(WeddingOptions.SectionName));
 
 builder.Services.AddEndpoints();
 builder.Services.AddRazorPages();

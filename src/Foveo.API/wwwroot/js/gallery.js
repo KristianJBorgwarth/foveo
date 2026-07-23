@@ -31,8 +31,8 @@
         document.body.style.overflow = "";
     }
 
-    document.querySelectorAll(".tile").forEach((tile) =>
-        tile.addEventListener("click", () => open(tile.dataset.type, tile.dataset.src)));
+    document.querySelectorAll(".card").forEach((card) =>
+        card.addEventListener("click", () => open(card.dataset.type, card.dataset.src)));
 
     closeBtn.addEventListener("click", close);
     lightbox.addEventListener("click", (e) => { if (e.target === lightbox) close(); });

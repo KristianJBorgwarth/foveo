@@ -1,30 +1,26 @@
+@inject IOptions<WeddingOptions> WeddingOpts
 <!DOCTYPE html>
-<html lang="en">
+<html lang="da">
 <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
-    <meta name="theme-color" content="#faf7f2" />
-    <title>@ViewData["Title"] · Our Wedding</title>
+    <meta name="theme-color" content="#F6F1E6" />
+    <title>@ViewData["Title"]</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Besley:ital,wght@0,400;0,700;0,900;1,500&family=Karla:wght@400;500;600&family=Space+Mono:wght@400&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
 </head>
 <body>
-    <header class="site-header">
-        <a class="brand" asp-page="/Index">
-            <span class="brand-mark">✦</span>
-            <span class="brand-name">Our Wedding</span>
-        </a>
-        <nav class="site-nav">
-            <a asp-page="/Index">Gallery</a>
-            <a class="nav-cta" asp-page="/Upload">Add photos</a>
-        </nav>
-    </header>
+    @RenderBody()
 
-    <main class="site-main">
-        @RenderBody()
-    </main>
-
-    <footer class="site-footer">
-        <p>Thank you for celebrating with us.</p>
+    <footer>
+        <svg class="brand-mark" viewBox="0 0 64 64" aria-hidden="true">
+            <circle cx="32" cy="32" r="29" fill="none" stroke="currentColor" stroke-width="2" />
+            <text x="32" y="36.5" text-anchor="middle" font-family="Besley, serif" font-weight="700" font-size="22" fill="currentColor" letter-spacing="1">@WeddingOpts.Value.Monogram</text>
+            <line x1="20" y1="45" x2="44" y2="45" stroke="currentColor" stroke-width="2" stroke-linecap="round" />
+        </svg>
+        <span class="mono">bevaret med foveo</span>
     </footer>
 
     @await RenderSectionAsync("Scripts", required: false)
