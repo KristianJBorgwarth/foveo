@@ -344,6 +344,35 @@ footer .mono { letter-spacing: 0.24em; }
 }
 .lightbox-close:hover { background: rgba(46, 36, 25, 0.8); }
 
+.lightbox-nav {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    border: 1.5px solid rgba(246, 241, 230, 0.4);
+    background: rgba(46, 36, 25, 0.5);
+    color: var(--paper);
+    font-size: 1.8rem;
+    line-height: 1;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding-bottom: 3px;
+    z-index: 2;
+}
+.lightbox-nav:hover { background: rgba(46, 36, 25, 0.8); }
+.lightbox-prev { left: max(0.75rem, env(safe-area-inset-left)); }
+.lightbox-next { right: max(0.75rem, env(safe-area-inset-right)); }
+.lightbox-nav[hidden] { display: none; }
+
+@media (max-width: 600px) {
+    /* On phones swipe is primary; keep arrows but smaller and less obtrusive. */
+    .lightbox-nav { width: 40px; height: 40px; font-size: 1.5rem; opacity: 0.75; }
+}
+
 @media (max-width: 600px) {
     header { padding-top: 9vh; }
     .upload-card { padding: 1.6em 1.3em; }
