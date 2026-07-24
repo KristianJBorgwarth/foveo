@@ -4,7 +4,6 @@ namespace Foveo.API.Configuration;
 public sealed class WeddingOptions
 {
     public const string SectionName = "Wedding";
-
     public string CoupleFirst { get; init; } = "Cecilie";
     public string CoupleSecond { get; init; } = "Mads";
     public string EventDate { get; init; } = "25 · 07 · 2026";
