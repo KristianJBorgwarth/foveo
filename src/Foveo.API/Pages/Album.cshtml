@@ -48,12 +48,12 @@
             <nav class="pager" aria-label="Sider">
                 @if (gallery.HasPrevious)
                 {
-                    <a class="mono" asp-page="/Album" asp-route-page="@(gallery.Page - 1)">← Nyere</a>
+                    <a class="mono" asp-page="/Album" asp-route-p="@(gallery.Page - 1)">← Nyere</a>
                 }
                 <span class="mono pager-status">Side @gallery.Page / @gallery.TotalPages</span>
                 @if (gallery.HasNext)
                 {
-                    <a class="mono" asp-page="/Album" asp-route-page="@(gallery.Page + 1)">Ældre →</a>
+                    <a class="mono" asp-page="/Album" asp-route-p="@(gallery.Page + 1)">Ældre →</a>
                 }
             </nav>
         }
