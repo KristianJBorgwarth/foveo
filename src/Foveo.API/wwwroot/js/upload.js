@@ -90,7 +90,12 @@
                 setStatus(i, err.message, "is-error");
             }
         }
-        doneMessage.hidden = !allOk;
+        if (allOk) {
+            // Straight to the album so the guest sees their upload land in the shared gallery.
+            window.location.assign("/Album");
+            return;
+        }
+        // Some failed — leave the per-item error statuses on screen and allow a retry.
         button.disabled = false;
     }
 

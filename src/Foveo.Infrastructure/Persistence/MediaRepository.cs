@@ -21,6 +21,9 @@ public sealed class MediaRepository(MediaDbContext db) : IMediaRepository
         => await db.Media
             .Where(m => m.Status == MediaStatus.Ready)
             .OrderByDescending(m => m.Created)
+            // Tie-breaker: batch uploads share a Created timestamp, so without a stable
+            // secondary key SQLite's OFFSET/LIMIT returns overlapping rows across pages.
+            .ThenByDescending(m => m.Id)
             .Skip((page - 1) * pageSize)
             .Take(pageSize)
             .ToListAsync(ct);
